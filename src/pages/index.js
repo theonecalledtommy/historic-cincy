@@ -9,7 +9,7 @@ import Container from 'components/Container';
 import Map from 'components/Map';
 
 const LOCATION = {
-  lat: 39.0963,
+  lat: 39.1196,
   lng: -84.5108,
 };
 const CENTER = [LOCATION.lat, LOCATION.lng];
@@ -62,7 +62,7 @@ const IndexPage = () => {
   return (
     <Layout pageName="home">
       <Helmet>
-        <title>Home Page</title>
+        <title>Historic Cincy</title>
       </Helmet>
       
       <Map {...mapSettings}>
