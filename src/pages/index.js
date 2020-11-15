@@ -1,4 +1,6 @@
 import React from 'react';
+import axios from 'axios';
+
 import { Helmet } from 'react-helmet';
 import { Marker, Popup } from 'react-leaflet';
 
@@ -15,33 +17,44 @@ const LOCATION = {
 const CENTER = [LOCATION.lat, LOCATION.lng];
 const DEFAULT_ZOOM = 5;
 const ZOOM = 12;
-
 const timeToZoom = 2000;
 
-const markers = [];
 
-let config = require('./../assets/geojson/photos.json');
+class IndexPage extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      markers: [],
+      apiEndpoint: "https://aqhseigkci.execute-api.us-east-2.amazonaws.com/dev/photos",
+      mapSettings: {
+        center: CENTER,
+        defaultBaseMap: 'OpenStreetMap',
+        zoom: DEFAULT_ZOOM,
+        mapEffect: this.mapEffect
+      }
+    };
+  }
 
-for (var idx in config) {
-  var item = config[idx];
-  markers.push({
-    name: item.properties.name,
-    title: item.properties.title,
-    url: item.properties.url,
-    lat: item.properties.lat,
-    lng: item.properties.lng,
-    imageUrl: item.properties.imageURL,
-    streetViewUrl: item.properties.streetviewURL
-  });
-}
+  componentDidMount() {
+    setTimeout(async () => {
+      let photos = await this.getPhotos().then(res => res.data);
+      this.setState({markers: photos})
+    }, 1000);
+  }
 
-const IndexPage = () => {
+  /**
+   * getPhotos
+   * @description Retrieve a list of photos to place on the map
+   */
+  async getPhotos() {
+    return axios.get(this.state.apiEndpoint);
+  }
+
   /**
    * mapEffect
    * @description Fires a callback once the page renders
-   * @example Here this is and example of being used to zoom in and set a popup on load
    */
-  async function mapEffect({ leafletElement } = {}) {
+  mapEffect({ leafletElement } = {}) {
     if ( !leafletElement ) return;
 
     setTimeout( async () => {
@@ -52,44 +65,39 @@ const IndexPage = () => {
     }, timeToZoom );
   }
 
-  const mapSettings = {
-    center: CENTER,
-    defaultBaseMap: 'OpenStreetMap',
-    zoom: DEFAULT_ZOOM,
-    mapEffect
-  };
+  render() {
+    return (
+      <Layout pageName="home">
+        <Helmet>
+          <title>Historic Cincy</title>
+        </Helmet>
 
-  return (
-    <Layout pageName="home">
-      <Helmet>
-        <title>Historic Cincy</title>
-      </Helmet>
-      
-      <Map {...mapSettings}>
-        {markers.map(marker => { return (
-          <Marker key={marker.url} position={[marker.lat, marker.lng] }>
-            <Popup maxWidth="250">
-              <div className="popup-gatsby">
-                <div className="popup-gatsby-image">
-                  <img className="gatsby-astronaut" src={marker.imageUrl} alt=""/>
+        <Map {...this.state.mapSettings}>
+          {this.state.markers.map(marker => { return (
+            <Marker key={marker.properties.url} position={[marker.properties.lat, marker.properties.lng] }>
+              <Popup maxWidth="250">
+                <div className="popup-gatsby">
+                  <div className="popup-gatsby-image">
+                    <img className="gatsby-astronaut" alt="" src={marker.properties.imageURL}/>
+                  </div>
+                  <div className="popup-gatsby-content">
+                    <h3>{marker.properties.name}</h3>
+                    <a target="_blank" rel="noreferrer" alt="" href={marker.properties.imageURL}>Image</a>
+                    <a target="_blank" rel="noreferrer" alt="" href={marker.properties.url}>UC Library</a>
+                    <a target="_blank" rel="noreferrer" alt="" href={marker.properties.streetviewURL}>Street View</a>
+                  </div>
                 </div>
-                <div className="popup-gatsby-content">
-                  <h3>{marker.name}</h3>
-                  <a target="_blank" rel="noreferrer" href={marker.imageUrl}>Image</a>
-                  <a target="_blank" rel="noreferrer" href={marker.url}>UC Library</a>
-                  <a target="_blank" rel="noreferrer" href={marker.streetViewUrl}>Street View</a>
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        )})}
-      </Map>
+              </Popup>
+            </Marker>
+          )})}
+        </Map>
 
-      <Container type="content" className="text-center home-start">
-        <a target="blank_" rel="noreferrer" href="https://drc.libraries.uc.edu/handle/2374.UC/702759">Cincinnati Subway and Street Improvements - University of Cincinnati Digital Resource Commons</a>
-      </Container>
-    </Layout>
-  );
+        <Container type="content" className="text-center home-start">
+          <a target="blank_" rel="noreferrer" href="https://drc.libraries.uc.edu/handle/2374.UC/702759">Cincinnati Subway and Street Improvements - University of Cincinnati Digital Resource Commons</a>
+        </Container>
+      </Layout>
+    );
+  }
 };
 
 export default IndexPage;
